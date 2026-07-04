@@ -1,0 +1,122 @@
+"use client";
+
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, FileText } from "lucide-react";
+
+export default function RegisterPage() {
+  const router = useRouter();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setFieldErrors({});
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.error?.errors) {
+          setFieldErrors(data.error.errors);
+        }
+        setError(data.error?.message || "Registration failed");
+        setIsLoading(false);
+        return;
+      }
+
+      // Auto sign-in after registration
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        // Registration succeeded but sign-in failed — redirect to login
+        router.push("/login");
+        return;
+      }
+
+      router.push("/documents");
+      router.refresh();
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <div className="w-full max-w-sm px-4">
+      <div className="mb-8 flex flex-col items-center text-center">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+          <FileText className="h-6 w-6 text-primary-foreground" />
+        </div>
+        <h1 className="text-xl font-semibold tracking-tight">EdgeDocs</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Create your account to get started</p>
+      </div>
+
+      <Card className="border-border/50 shadow-lg">
+        <CardHeader className="space-y-1 pb-4">
+          <CardTitle className="text-lg">Create account</CardTitle>
+          <CardDescription>Enter your details below</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</div>}
+
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" disabled={isLoading} minLength={2} />
+              {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name[0]}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" disabled={isLoading} />
+              {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email[0]}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" disabled={isLoading} minLength={8} />
+              {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password[0]}</p>}
+              <p className="text-xs text-muted-foreground">At least 8 characters with uppercase, lowercase, and a number</p>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="animate-spin" />}
+              Create account
+            </Button>
+          </form>
+
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
+              Sign in
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
