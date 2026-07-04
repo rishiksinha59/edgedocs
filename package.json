@@ -7,7 +7,7 @@
     "dev:collab": "cd server && npm run dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
