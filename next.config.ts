@@ -11,6 +11,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   serverExternalPackages: ["@neondatabase/serverless"],
   async headers() {
     return [
