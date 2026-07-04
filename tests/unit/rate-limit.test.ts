@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { rateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { rateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
 
 describe("Rate Limiter", () => {
   beforeEach(() => {
@@ -80,6 +80,36 @@ describe("Rate Limiter", () => {
     it("has document creation limit of 10 per minute", () => {
       expect(RATE_LIMITS.create.max).toBe(10);
       expect(RATE_LIMITS.create.windowSec).toBe(60);
+    });
+  });
+
+  describe("rateLimitResponse", () => {
+    it("returns a 429 Response", () => {
+      const resetAt = Date.now() + 30_000;
+      const response = rateLimitResponse(resetAt);
+      expect(response.status).toBe(429);
+    });
+
+    it("includes Retry-After header", () => {
+      const resetAt = Date.now() + 30_000;
+      const response = rateLimitResponse(resetAt);
+      const retryAfter = response.headers.get("Retry-After");
+      expect(Number(retryAfter)).toBeGreaterThan(0);
+    });
+
+    it("includes rate limit reset header", () => {
+      const resetAt = Date.now() + 30_000;
+      const response = rateLimitResponse(resetAt);
+      const resetHeader = response.headers.get("X-RateLimit-Reset");
+      expect(Number(resetHeader)).toBeGreaterThan(0);
+    });
+
+    it("returns JSON error body", async () => {
+      const resetAt = Date.now() + 30_000;
+      const response = rateLimitResponse(resetAt);
+      const body = await response.json();
+      expect(body.error.code).toBe("RATE_LIMITED");
+      expect(body.error.message).toContain("Too many requests");
     });
   });
 });

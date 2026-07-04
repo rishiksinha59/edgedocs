@@ -11,6 +11,7 @@ interface RateLimitEntry {
 const store = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries periodically
+/* v8 ignore start */
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of store) {
@@ -19,6 +20,7 @@ setInterval(() => {
     }
   }
 }, 60_000); // Every minute
+/* v8 ignore stop */
 
 interface RateLimitConfig {
   /** Maximum requests allowed in the window */

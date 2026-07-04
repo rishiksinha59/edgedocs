@@ -7,6 +7,7 @@ import {
   ValidationError,
   RateLimitError,
   PayloadTooLargeError,
+  formatErrorResponse,
 } from "@/lib/errors";
 
 describe("Error Classes", () => {
@@ -77,6 +78,28 @@ describe("Error Classes", () => {
       const err = new PayloadTooLargeError();
       expect(err.statusCode).toBe(413);
       expect(err.code).toBe("PAYLOAD_TOO_LARGE");
+    });
+  });
+
+  describe("formatErrorResponse", () => {
+    it("formats a basic error", () => {
+      const err = new AppError("Something broke", 500, "INTERNAL_ERROR");
+      const result = formatErrorResponse(err);
+      expect(result.error.code).toBe("INTERNAL_ERROR");
+      expect(result.error.message).toBe("Something broke");
+    });
+
+    it("includes validation errors when present", () => {
+      const err = new ValidationError("Bad input", { email: ["Required"] });
+      const result = formatErrorResponse(err);
+      expect(result.error.code).toBe("VALIDATION_ERROR");
+      expect((result.error as any).errors).toEqual({ email: ["Required"] });
+    });
+
+    it("does not include errors field for non-ValidationError", () => {
+      const err = new NotFoundError("Document");
+      const result = formatErrorResponse(err);
+      expect((result.error as any).errors).toBeUndefined();
     });
   });
 });
