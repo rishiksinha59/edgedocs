@@ -189,11 +189,11 @@ export function AIAssistant({ editor, isOpen, onClose }: AIAssistantProps) {
       {/* Actions */}
       <div className="space-y-1 border-b px-3 py-3">
         <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">Writing</p>
-        <button onClick={handleContinueWriting} disabled={isProcessing} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50">
+        <button onClick={handleContinueWriting} disabled={isProcessing} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer">
           <ArrowRight className="h-3.5 w-3.5 text-purple-500" />
           Continue writing
         </button>
-        <button onClick={handleSummarize} disabled={isProcessing} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50">
+        <button onClick={handleSummarize} disabled={isProcessing} className="flex cursor-pointer w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50">
           <FileText className="h-3.5 w-3.5 text-purple-500" />
           Summarize document
         </button>
@@ -209,7 +209,7 @@ export function AIAssistant({ editor, isOpen, onClose }: AIAssistantProps) {
             ["casual", "Casual tone"],
           ] as const
         ).map(([action, label]) => (
-          <button key={action} onClick={() => handleImproveText(action)} disabled={isProcessing} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50">
+          <button key={action} onClick={() => handleImproveText(action)} disabled={isProcessing} className="flex cursor-pointer w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50">
             <Wand2 className="h-3.5 w-3.5 text-purple-500" />
             {label}
           </button>
@@ -237,7 +237,7 @@ export function AIAssistant({ editor, isOpen, onClose }: AIAssistantProps) {
             </div>
 
             <div className="flex gap-2 border-t px-4 py-3">
-              <Button size="sm" onClick={insertResult} className="flex-1">
+              <Button size="sm" onClick={insertResult} className="flex-1 cursor-pointer">
                 <Check className="mr-1.5 h-3.5 w-3.5" />
                 {activeAction === "summarize" ? "Insert" : activeAction === "complete" ? "Insert" : "Replace"}
               </Button>
@@ -248,6 +248,7 @@ export function AIAssistant({ editor, isOpen, onClose }: AIAssistantProps) {
                   setResult("");
                   setActiveAction(null);
                 }}
+                className="cursor-pointer"
               >
                 Discard
               </Button>

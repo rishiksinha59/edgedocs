@@ -13,8 +13,9 @@ import { ConnectionStatus } from "./connection-status";
 import { OfflineBanner } from "./offline-banner";
 import { VersionPanel } from "./version-panel";
 import { AIAssistant } from "./ai-assistant";
-import { ArrowLeft, History, Sparkles } from "lucide-react";
+import { ArrowLeft, History, Sparkles, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ShareModal } from "./share-modal";
 
 interface EditorRootProps {
   documentId: string;
@@ -30,6 +31,7 @@ export function EditorRoot({ documentId, initialTitle, userRole, userId, userNam
   const [isSaving, setIsSaving] = useState(false);
   const [isVersionPanelOpen, setIsVersionPanelOpen] = useState(false);
   const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [ydoc] = useState(() => new Y.Doc());
   const isReadOnly = userRole === "viewer";
 
@@ -101,13 +103,23 @@ export function EditorRoot({ documentId, initialTitle, userRole, userId, userNam
 
         <ConnectionStatus syncState={syncState} pendingUpdates={pendingUpdates} onReconnect={forceReconnect} />
 
-        <Button variant="ghost" size="icon" onClick={() => setIsVersionPanelOpen((v) => !v)} aria-label="Version history" title="Version history">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsShareModalOpen(true)}
+          className="flex items-center gap-1.5 h-8 font-medium cursor-pointer"
+        >
+          <UserPlus className="h-3.5 w-3.5" />
+          <span>Share</span>
+        </Button>
+
+        <Button className="cursor-pointer" variant="ghost" size="icon" onClick={() => setIsVersionPanelOpen((v) => !v)} aria-label="Version history" title="Version history">
           <History className="h-4 w-4" />
         </Button>
 
         {!isReadOnly && (
-          <Button variant="ghost" size="icon" onClick={() => setIsAIPanelOpen((v) => !v)} aria-label="AI assistant" title="AI assistant">
-            <Sparkles className="h-4 w-4" />
+          <Button className="cursor-pointer" variant="ghost" size="icon" onClick={() => setIsAIPanelOpen((v) => !v)} aria-label="AI assistant" title="AI assistant">
+            <Sparkles className="h-4 w-4 cursor-pointer" />
           </Button>
         )}
 
@@ -169,6 +181,14 @@ export function EditorRoot({ documentId, initialTitle, userRole, userId, userNam
 
         {/* AI Assistant Panel */}
         <AIAssistant editor={editor} isOpen={isAIPanelOpen} onClose={() => setIsAIPanelOpen(false)} />
+
+        {/* Share Modal */}
+        <ShareModal
+          documentId={documentId}
+          userRole={userRole}
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+        />
       </div>
     </div>
   );

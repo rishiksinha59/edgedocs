@@ -15,7 +15,7 @@ interface ToolbarButtonProps {
 
 function ToolbarButton({ onClick, isActive, disabled, children, title }: ToolbarButtonProps) {
   return (
-    <button onClick={onClick} disabled={disabled} title={title} className={cn("flex h-8 w-8 items-center justify-center rounded-md transition-colors", "hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed", isActive && "bg-secondary text-foreground")}>
+    <button onClick={onClick} disabled={disabled} title={title} className={cn("flex h-8 w-8 items-center justify-center rounded-md transition-colors cursor-pointer", "hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed", isActive && "bg-secondary text-foreground")}>
       {children}
     </button>
   );
