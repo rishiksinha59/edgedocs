@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Plus, FileText, MoreHorizontal, Trash2, Loader2, Pencil, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "@/lib/format";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { InputDialog } from "@/components/ui/input-dialog";
 
 interface Document {
   id: string;
@@ -18,12 +20,12 @@ interface Document {
 
 function DocumentCard({
   doc,
-  onDelete,
-  onRename,
+  onDeleteClick,
+  onRenameClick,
 }: {
   doc: Document;
-  onDelete: (id: string) => void;
-  onRename: (id: string, newTitle: string) => void;
+  onDeleteClick: (id: string) => void;
+  onRenameClick: (id: string, currentTitle: string) => void;
 }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,32 +43,10 @@ function DocumentCard({
     };
   }, []);
 
-  const handleRename = async (e: React.MouseEvent) => {
+  const handleRename = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    const newTitle = prompt("Enter new document title:", doc.title);
-    if (newTitle === null) return;
-    const trimmedTitle = newTitle.trim();
-    if (!trimmedTitle) {
-      alert("Title cannot be empty");
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/documents/${doc.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: trimmedTitle }),
-      });
-      if (res.ok) {
-        onRename(doc.id, trimmedTitle);
-      } else {
-        alert("Failed to rename document");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Failed to rename document");
-    }
+    onRenameClick(doc.id, doc.title);
   };
 
   const handleOpenNewTab = (e: React.MouseEvent) => {
@@ -108,7 +88,7 @@ function DocumentCard({
               </button>
               <button
                 onClick={() => {
-                  onDelete(doc.id);
+                  onDeleteClick(doc.id);
                   setMenuOpen(false);
                 }}
                 className="flex cursor-pointer w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-accent border-t border-border/50 mt-1 pt-1.5"
@@ -161,6 +141,15 @@ export default function DocumentsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
+  // Modal dialog states
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renamingDoc, setRenamingDoc] = useState<{ id: string; title: string } | null>(null);
+  const [isRenaming, setIsRenaming] = useState(false);
+
   const fetchDocuments = useCallback(async () => {
     try {
       const res = await fetch("/api/documents");
@@ -199,21 +188,60 @@ export default function DocumentsPage() {
     }
   }
 
-  async function handleDelete(id: string) {
+  const handleDeleteClick = (id: string) => {
+    setDeletingId(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleRenameClick = (id: string, currentTitle: string) => {
+    setRenamingDoc({ id, title: currentTitle });
+    setRenameDialogOpen(true);
+  };
+
+  async function handleDeleteConfirm() {
+    if (!deletingId) return;
+    setIsDeleting(true);
     try {
-      const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/documents/${deletingId}`, { method: "DELETE" });
       if (res.ok) {
-        setDocs((prev) => prev.filter((d) => d.id !== id));
+        setDocs((prev) => prev.filter((d) => d.id !== deletingId));
+        setDeleteConfirmOpen(false);
+        setDeletingId(null);
+      } else {
+        alert("Failed to delete document");
       }
     } catch (err) {
       console.error("Failed to delete document:", err);
+      alert("Failed to delete document");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
-  function handleRename(id: string, newTitle: string) {
-    setDocs((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, title: newTitle, updatedAt: new Date().toISOString() } : d))
-    );
+  async function handleRenameConfirm(newTitle: string) {
+    if (!renamingDoc) return;
+    setIsRenaming(true);
+    try {
+      const res = await fetch(`/api/documents/${renamingDoc.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle }),
+      });
+      if (res.ok) {
+        setDocs((prev) =>
+          prev.map((d) => (d.id === renamingDoc.id ? { ...d, title: newTitle, updatedAt: new Date().toISOString() } : d))
+        );
+        setRenameDialogOpen(false);
+        setRenamingDoc(null);
+      } else {
+        alert("Failed to rename document");
+      }
+    } catch (err) {
+      console.error("Failed to rename document:", err);
+      alert("Failed to rename document");
+    } finally {
+      setIsRenaming(false);
+    }
   }
 
   return (
@@ -236,10 +264,41 @@ export default function DocumentsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {docs.map((doc) => (
-            <DocumentCard key={doc.id} doc={doc} onDelete={handleDelete} onRename={handleRename} />
+            <DocumentCard key={doc.id} doc={doc} onDeleteClick={handleDeleteClick} onRenameClick={handleRenameClick} />
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => {
+          setDeleteConfirmOpen(false);
+          setDeletingId(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete document"
+        description="Are you sure you want to delete this document? This action cannot be undone."
+        confirmText="Delete"
+        variant="destructive"
+        isLoading={isDeleting}
+      />
+
+      {/* Rename Input Dialog */}
+      <InputDialog
+        isOpen={renameDialogOpen}
+        onClose={() => {
+          setRenameDialogOpen(false);
+          setRenamingDoc(null);
+        }}
+        onSubmit={handleRenameConfirm}
+        title="Rename document"
+        description="Enter a new title for this document."
+        defaultValue={renamingDoc?.title || ""}
+        placeholder="Document title"
+        submitText="Rename"
+        isLoading={isRenaming}
+      />
     </div>
   );
 }

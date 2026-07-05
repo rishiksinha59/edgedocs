@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { History, Plus, RotateCcw, X, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Version {
   id: string;
@@ -29,6 +29,11 @@ export function VersionPanel({ documentId, userRole, isOpen, onClose, onRestore,
   const [isLoading, setIsLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Restore confirmation states
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  const [pendingRestoreId, setPendingRestoreId] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   const canCreate = userRole === "owner" || userRole === "editor";
   const canRestore = userRole === "owner";
@@ -75,14 +80,22 @@ export function VersionPanel({ documentId, userRole, isOpen, onClose, onRestore,
     }
   };
 
-  const handleRestore = async (versionId: string) => {
-    if (!confirm("Are you sure you want to restore this version? This will replace the current document content.")) {
-      return;
-    }
+  const handleRestoreClick = (versionId: string) => {
+    setPendingRestoreId(versionId);
+    setRestoreConfirmOpen(true);
+  };
+
+  const handleRestoreConfirm = async () => {
+    if (!pendingRestoreId) return;
+    setIsRestoring(true);
     try {
-      await onRestore(versionId);
+      await onRestore(pendingRestoreId);
+      setRestoreConfirmOpen(false);
+      setPendingRestoreId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to restore version");
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -96,7 +109,7 @@ export function VersionPanel({ documentId, userRole, isOpen, onClose, onRestore,
           <History className="h-4 w-4" />
           <h3 className="text-sm font-semibold">Version History</h3>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7">
+        <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 cursor-pointer">
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -104,7 +117,7 @@ export function VersionPanel({ documentId, userRole, isOpen, onClose, onRestore,
       {/* Create Version Button */}
       {canCreate && (
         <div className="border-b px-4 py-3">
-          <Button onClick={createVersion} disabled={isCreating} size="sm" className="w-full">
+          <Button onClick={createVersion} disabled={isCreating} size="sm" className="w-full cursor-pointer">
             <Plus className="mr-2 h-3.5 w-3.5" />
             {isCreating ? "Saving..." : "Save Version"}
           </Button>
@@ -148,7 +161,7 @@ export function VersionPanel({ documentId, userRole, isOpen, onClose, onRestore,
 
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 {canRestore && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRestore(version.id)} title="Restore this version">
+                  <Button variant="ghost" size="icon" className="h-7 w-7 cursor-pointer" onClick={() => handleRestoreClick(version.id)} title="Restore this version">
                     <RotateCcw className="h-3.5 w-3.5" />
                   </Button>
                 )}
@@ -157,6 +170,20 @@ export function VersionPanel({ documentId, userRole, isOpen, onClose, onRestore,
           </div>
         ))}
       </div>
+
+      {/* Restore Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={restoreConfirmOpen}
+        onClose={() => {
+          setRestoreConfirmOpen(false);
+          setPendingRestoreId(null);
+        }}
+        onConfirm={handleRestoreConfirm}
+        title="Restore version"
+        description="Are you sure you want to restore this version? This will replace the current document content."
+        confirmText="Restore"
+        isLoading={isRestoring}
+      />
     </div>
   );
 }

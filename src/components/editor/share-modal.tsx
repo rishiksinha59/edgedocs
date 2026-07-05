@@ -5,6 +5,7 @@ import { X, UserPlus, Trash2, Loader2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Collaborator {
   id: string;
@@ -30,6 +31,11 @@ export function ShareModal({ documentId, userRole, isOpen, onClose }: ShareModal
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Revoke confirmation states
+  const [removeConfirmOpen, setRemoveConfirmOpen] = useState(false);
+  const [pendingRemoveUser, setPendingRemoveUser] = useState<{ id: string; email: string } | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const isOwner = userRole === "owner";
 
@@ -110,16 +116,20 @@ export function ShareModal({ documentId, userRole, isOpen, onClose }: ShareModal
     }
   };
 
-  const handleRemove = async (userId: string, userEmail: string) => {
-    if (!confirm(`Are you sure you want to revoke access for ${userEmail}?`)) {
-      return;
-    }
+  const handleRemoveClick = (userId: string, userEmail: string) => {
+    setPendingRemoveUser({ id: userId, email: userEmail });
+    setRemoveConfirmOpen(true);
+  };
 
+  const handleRemoveConfirm = async () => {
+    if (!pendingRemoveUser) return;
+
+    setIsRemoving(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const res = await fetch(`/api/documents/${documentId}/collaborators/${userId}`, {
+      const res = await fetch(`/api/documents/${documentId}/collaborators/${pendingRemoveUser.id}`, {
         method: "DELETE",
       });
 
@@ -128,10 +138,14 @@ export function ShareModal({ documentId, userRole, isOpen, onClose }: ShareModal
         throw new Error(data.error?.message || "Failed to remove collaborator");
       }
 
-      setSuccess(`Removed access for ${userEmail}.`);
-      setCollaborators((prev) => prev.filter((c) => c.id !== userId));
+      setSuccess(`Removed access for ${pendingRemoveUser.email}.`);
+      setCollaborators((prev) => prev.filter((c) => c.id !== pendingRemoveUser.id));
+      setRemoveConfirmOpen(false);
+      setPendingRemoveUser(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove collaborator");
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -277,7 +291,7 @@ export function ShareModal({ documentId, userRole, isOpen, onClose }: ShareModal
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleRemove(c.id, c.email)}
+                        onClick={() => handleRemoveClick(c.id, c.email)}
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         title={`Remove ${c.email}`}
                       >
@@ -291,6 +305,20 @@ export function ShareModal({ documentId, userRole, isOpen, onClose }: ShareModal
           )}
         </div>
       </div>
+      {/* Collaborator Revocation Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={removeConfirmOpen}
+        onClose={() => {
+          setRemoveConfirmOpen(false);
+          setPendingRemoveUser(null);
+        }}
+        onConfirm={handleRemoveConfirm}
+        title="Revoke access"
+        description={`Are you sure you want to revoke document access for ${pendingRemoveUser?.email}?`}
+        confirmText="Revoke"
+        variant="destructive"
+        isLoading={isRemoving}
+      />
     </div>
   );
 }
