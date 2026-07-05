@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { type Editor } from "@tiptap/react";
-import { type UndoManager } from "yjs";
 import { Bold, Italic, Strikethrough, Code, List, ListOrdered, Quote, Heading1, Heading2, Heading3, Minus, Undo2, Redo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -27,16 +27,30 @@ function ToolbarDivider() {
 
 interface EditorToolbarProps {
   editor: Editor;
-  undoManager: UndoManager | null;
 }
 
-export function EditorToolbar({ editor, undoManager }: EditorToolbarProps) {
+export function EditorToolbar({ editor }: EditorToolbarProps) {
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  useEffect(() => {
+    const update = () => {
+      setCanUndo(editor.can().undo());
+      setCanRedo(editor.can().redo());
+    };
+    editor.on("transaction", update);
+    update();
+    return () => {
+      editor.off("transaction", update);
+    };
+  }, [editor]);
+
   return (
     <div className="sticky top-14 z-40 flex items-center gap-0.5 overflow-x-auto border-b bg-background/80 px-4 py-1.5 backdrop-blur-sm">
-      <ToolbarButton onClick={() => undoManager?.undo()} disabled={!undoManager || undoManager.undoStack.length === 0} title="Undo (⌘Z)">
+      <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={!canUndo} title="Undo (⌘Z)">
         <Undo2 className="h-4 w-4" />
       </ToolbarButton>
-      <ToolbarButton onClick={() => undoManager?.redo()} disabled={!undoManager || undoManager.redoStack.length === 0} title="Redo (⌘⇧Z)">
+      <ToolbarButton onClick={() => editor.chain().focus().redo().run()} disabled={!canRedo} title="Redo (⌘⇧Z)">
         <Redo2 className="h-4 w-4" />
       </ToolbarButton>
 
