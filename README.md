@@ -1,36 +1,217 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EdgeDocs
+
+A local-first, collaborative document editor with offline synchronization, deterministic conflict resolution, and granular version control. Built with Next.js 16, Yjs CRDTs, and PostgreSQL.
+
+**Live Demo:** [edgedocs.vercel.app](https://edgedocs.vercel.app)
+
+---
+
+## Features
+
+- **Local-First Editing** — Zero-latency typing. Documents are stored in IndexedDB and work fully offline with no network requests blocking the UI.
+- **Real-Time Collaboration** — Multiple users edit simultaneously via WebSocket (Hocuspocus). Cursor presence and live sync across all connected clients.
+- **Deterministic Conflict Resolution** — Yjs CRDTs guarantee mathematically convergent merges. No last-write-wins, no data loss, regardless of edit ordering.
+- **Offline Sync Engine** — Edits made offline are queued locally. On reconnect, the sync engine automatically reconciles local and remote state without overwriting work.
+- **Version History & Time Travel** — Capture named snapshots. Browse a timeline of past versions. Restore any previous state safely via CRDT-correct transactional replay.
+- **Granular RBAC** — Documents support Owner, Editor, and Viewer roles. Viewers cannot push state updates to the real-time server (`readOnly` enforced server-side).
+- **AI Writing Assistant** — Groq LLM integration for continue writing, summarize, grammar fix, clarity improvement, tone adjustment, and text expansion/shortening.
+- **Dark Mode** — System-aware theme toggle (Light / Dark / System).
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      Browser Client                      │
+│                                                          │
+│  ┌──────────┐   ┌──────────────┐   ┌──────────────────┐ │
+│  │  TipTap   │──▶│   Yjs Doc    │──▶│   IndexedDB      │ │
+│  │  Editor   │   │   (CRDT)     │   │   (y-indexeddb)   │ │
+│  └──────────┘   └──────┬───────┘   └──────────────────┘ │
+│                         │ WebSocket                       │
+└─────────────────────────┼────────────────────────────────┘
+                          │
+              ┌───────────▼───────────┐
+              │   Hocuspocus Server    │
+              │   (Railway / Docker)   │
+              │                        │
+              │  • JWT Authentication  │
+              │  • Role Enforcement    │
+              │  • 1MB Payload Limit   │
+              │  • PostgreSQL Persist  │
+              └───────────┬────────────┘
+                          │
+              ┌───────────▼───────────┐
+              │   Neon PostgreSQL      │
+              │                        │
+              │  • Users & Auth        │
+              │  • Documents (bytea)   │
+              │  • Versions (snapshots)│
+              │  • Collaborators (RBAC)│
+              └────────────────────────┘
+```
+
+### Data Flow
+
+1. **User types** → TipTap applies the edit to the in-memory Yjs document (zero network latency).
+2. **IndexedDB** persists the Yjs state locally for offline durability.
+3. **HocuspocusProvider** sends Yjs update deltas over WebSocket to the collaboration server.
+4. **Hocuspocus server** broadcasts the deltas to all connected clients and periodically persists the merged state to PostgreSQL.
+5. **On reconnect**, Yjs state vectors are exchanged — only missing updates are transferred, achieving efficient differential sync.
+
+### Conflict Resolution
+
+Yjs implements an academic-grade CRDT (Conflict-free Replicated Data Type). Every character insertion receives a globally unique Lamport timestamp. When two users edit the same paragraph concurrently (even offline), the merge is:
+
+- **Deterministic** — Same result regardless of operation arrival order.
+- **Commutative** — `merge(A, B) === merge(B, A)`.
+- **Idempotent** — Applying the same update twice has no effect.
+
+This eliminates the need for manual conflict resolution dialogs entirely.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
+| Editor | TipTap 3 + Yjs CRDT + y-indexeddb |
+| Real-Time | Hocuspocus WebSocket Server |
+| Database | PostgreSQL (Neon Serverless) + Drizzle ORM |
+| Authentication | Auth.js v5 (JWT strategy, bcryptjs hashing) |
+| AI | Groq LLM (llama-3.3-70b-versatile) |
+| Validation | Zod v4 |
+| Deployment | Vercel (frontend) + Railway (WebSocket server) |
+
+---
+
+## Security Design
+
+### Authentication
+- Passwords hashed with `bcryptjs` (10 salt rounds).
+- JWT session strategy with `AUTH_SECRET` signing.
+- Middleware protects all routes — unauthenticated users are redirected to `/login`.
+
+### Authorization (RBAC)
+- Three document roles: `owner`, `editor`, `viewer`.
+- Hocuspocus server sets `connectionConfig.readOnly = true` for viewers — state update packets are rejected at the protocol level.
+- Every API route verifies the user's role via a `documentCollaborators` JOIN query scoped to `session.user.id`.
+
+### Tenant Isolation
+- All database queries are scoped through Drizzle ORM with `WHERE userId = session.user.id` — there are no global table reads.
+- Users can only access documents where they have an explicit `documentCollaborators` entry.
+
+### OOM Prevention
+- Sync payloads are capped at **1 MB** (`MAX_PAYLOAD_SIZE`). Oversized states are rejected before database writes.
+- WebSocket connections require a valid, short-lived JWT (5 minute expiry) — unauthenticated clients are rejected at handshake.
+- Zod validates all API request bodies to prevent malformed input.
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- PostgreSQL database (e.g., [Neon](https://neon.tech))
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/rishiksinha59/edgedocs.git
+cd edgedocs
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create `.env.local` in the project root:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+# Database (Neon PostgreSQL)
+DATABASE_URL=postgresql://...
 
-## Learn More
+# Auth.js
+AUTH_SECRET=<generate with: openssl rand -base64 32>
+AUTH_URL=http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+# WebSocket Collaboration Server
+NEXT_PUBLIC_COLLABORATION_URL=ws://localhost:1234
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Collaboration Server JWT Secret
+COLLABORATION_JWT_SECRET=<generate with: openssl rand -base64 32>
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# AI (Groq)
+GROQ_API_KEY=<your groq api key>
 
-## Deploy on Vercel
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Database Setup
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run db:push
+```
+
+### Run Development Servers
+
+```bash
+# Terminal 1 — Next.js frontend
+npm run dev
+
+# Terminal 2 — Hocuspocus collaboration server
+npm run dev:collab
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Project Structure
+
+```
+edgedocs/
+├── src/
+│   ├── app/
+│   │   ├── (auth)/           # Login & Register pages
+│   │   ├── (dashboard)/      # Document list dashboard
+│   │   ├── api/              # REST API routes
+│   │   │   ├── ai/           # AI endpoints (complete, improve, summarize)
+│   │   │   ├── auth/         # NextAuth handlers
+│   │   │   └── documents/    # CRUD, versions, collaborators, sync
+│   │   └── editor/           # Document editor page
+│   ├── components/
+│   │   ├── editor/           # EditorRoot, Toolbar, AI Assistant, Version Panel
+│   │   └── ui/               # Button, Card, Input, ConfirmDialog, InputDialog
+│   ├── hooks/                # useSyncEngine, useOnlineStatus
+│   ├── lib/
+│   │   ├── auth.ts           # Auth.js configuration
+│   │   ├── db/               # Drizzle schema & connection
+│   │   └── utils.ts          # Shared utilities
+│   └── middleware.ts         # Route protection
+├── server/                   # Hocuspocus collaboration server
+│   ├── src/index.ts          # WebSocket server with JWT auth & RBAC
+│   └── Dockerfile            # Production container
+└── drizzle/                  # Database migrations
+```
+
+---
+
+## Deployment
+
+### Frontend (Vercel)
+The Next.js frontend auto-deploys to Vercel on every push to `main`.
+
+### Collaboration Server (Railway)
+The Hocuspocus WebSocket server runs in a Docker container on Railway with the same `DATABASE_URL` and `COLLABORATION_JWT_SECRET` environment variables.
+
+---
+
+## Author
+
+**Rishik Sinha**
+- GitHub: [github.com/rishiksinha59](https://github.com/rishiksinha59)
+- LinkedIn: [linkedin.com/in/rishik-sinha-61a718287](https://www.linkedin.com/in/rishik-sinha-61a718287/)
