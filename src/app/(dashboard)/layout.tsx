@@ -128,7 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <footer className="border-t py-6 bg-card text-xs text-muted-foreground">
         <div className="mx-auto max-w-7xl px-4 md:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} EdgeDocs. Developed as part of the House of Edtech Assignment.</p>
+          <p>© {new Date().getFullYear()} EdgeDocs. Developed and maintained by Rishik Sinha.</p>
           <div className="flex items-center gap-3">
             <span className="font-medium text-foreground">Rishik Sinha</span>
             <span className="text-border">|</span>

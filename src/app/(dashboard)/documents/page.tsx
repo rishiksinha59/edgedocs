@@ -150,7 +150,7 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
           <p className="text-sm text-muted-foreground">Create and manage your collaborative documents</p>
         </div>
-        <Button onClick={handleCreate} disabled={isCreating}>
+        <Button onClick={handleCreate} disabled={isCreating} className="cursor-pointer">
           {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           New document
         </Button>
