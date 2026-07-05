@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, FileText, MoreHorizontal, Trash2, Loader2 } from "lucide-react";
+import { Plus, FileText, MoreHorizontal, Trash2, Loader2, Pencil, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "@/lib/format";
 
@@ -16,9 +16,64 @@ interface Document {
   updatedAt: string;
 }
 
-function DocumentCard({ doc, onDelete }: { doc: Document; onDelete: (id: string) => void }) {
+function DocumentCard({
+  doc,
+  onDelete,
+  onRename,
+}: {
+  doc: Document;
+  onDelete: (id: string) => void;
+  onRename: (id: string, newTitle: string) => void;
+}) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const handleRename = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpen(false);
+    const newTitle = prompt("Enter new document title:", doc.title);
+    if (newTitle === null) return;
+    const trimmedTitle = newTitle.trim();
+    if (!trimmedTitle) {
+      alert("Title cannot be empty");
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/documents/${doc.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: trimmedTitle }),
+      });
+      if (res.ok) {
+        onRename(doc.id, trimmedTitle);
+      } else {
+        alert("Failed to rename document");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to rename document");
+    }
+  };
+
+  const handleOpenNewTab = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpen(false);
+    window.open(`/editor/${doc.id}`, "_blank");
+  };
 
   return (
     <div className="group relative flex cursor-pointer flex-col rounded-xl border bg-card p-5 transition-all hover:border-primary/20 hover:shadow-md" onClick={() => router.push(`/editor/${doc.id}`)}>
@@ -26,7 +81,7 @@ function DocumentCard({ doc, onDelete }: { doc: Document; onDelete: (id: string)
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
           <FileText className="h-4 w-4 text-muted-foreground" />
         </div>
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -38,13 +93,25 @@ function DocumentCard({ doc, onDelete }: { doc: Document; onDelete: (id: string)
             <MoreHorizontal className="h-4 w-4 cursor-pointer" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-md border bg-popover p-1 shadow-md" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-md border bg-popover p-1 shadow-md" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={handleOpenNewTab}
+                className="flex cursor-pointer w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-foreground"
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /> Open in new tab
+              </button>
+              <button
+                onClick={handleRename}
+                className="flex cursor-pointer w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent text-foreground"
+              >
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground" /> Rename
+              </button>
               <button
                 onClick={() => {
                   onDelete(doc.id);
                   setMenuOpen(false);
                 }}
-                className="flex cursor-pointer w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-accent"
+                className="flex cursor-pointer w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-accent border-t border-border/50 mt-1 pt-1.5"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Delete
               </button>
@@ -143,6 +210,12 @@ export default function DocumentsPage() {
     }
   }
 
+  function handleRename(id: string, newTitle: string) {
+    setDocs((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, title: newTitle, updatedAt: new Date().toISOString() } : d))
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-6">
       <div className="mb-8 flex items-center justify-between">
@@ -163,7 +236,7 @@ export default function DocumentsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {docs.map((doc) => (
-            <DocumentCard key={doc.id} doc={doc} onDelete={handleDelete} />
+            <DocumentCard key={doc.id} doc={doc} onDelete={handleDelete} onRename={handleRename} />
           ))}
         </div>
       )}
