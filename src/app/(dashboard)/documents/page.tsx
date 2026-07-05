@@ -44,7 +44,7 @@ function DocumentCard({ doc, onDelete }: { doc: Document; onDelete: (id: string)
                   onDelete(doc.id);
                   setMenuOpen(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-accent"
+                className="flex cursor-pointer w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-accent"
               >
                 <Trash2 className="h-3.5 w-3.5" /> Delete
               </button>
