@@ -174,7 +174,14 @@ export function AIAssistant({ editor, isOpen, onClose }: AIAssistantProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="flex h-full w-80 flex-col border-l bg-background">
+    <>
+      {/* Mobile backdrop */}
+      <div 
+        className="fixed inset-0 z-10 bg-black/30 backdrop-blur-xs md:hidden"
+        onClick={onClose}
+      />
+
+      <div className="fixed inset-y-0 right-0 max-md:z-50 flex h-full w-full max-w-xs flex-col border-l bg-background shadow-xl md:relative md:w-80 md:shadow-none animate-in slide-in-from-right duration-200">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
@@ -187,82 +194,84 @@ export function AIAssistant({ editor, isOpen, onClose }: AIAssistantProps) {
       </div>
 
       {/* Actions */}
-      <div className="space-y-1 border-b px-3 py-3">
-        <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">Writing</p>
-        <button onClick={handleContinueWriting} disabled={isProcessing} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer">
-          <ArrowRight className="h-3.5 w-3.5 text-purple-500" />
-          Continue writing
-        </button>
-        <button onClick={handleSummarize} disabled={isProcessing} className="flex cursor-pointer w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50">
-          <FileText className="h-3.5 w-3.5 text-purple-500" />
-          Summarize document
-        </button>
-
-        <p className="mb-2 mt-3 text-xs font-medium text-muted-foreground uppercase">Edit Selection</p>
-        {(
-          [
-            ["grammar", "Fix grammar & spelling"],
-            ["improve", "Improve clarity"],
-            ["shorten", "Make shorter"],
-            ["expand", "Expand with detail"],
-            ["professional", "Professional tone"],
-            ["casual", "Casual tone"],
-          ] as const
-        ).map(([action, label]) => (
-          <button key={action} onClick={() => handleImproveText(action)} disabled={isProcessing} className="flex cursor-pointer w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50">
-            <Wand2 className="h-3.5 w-3.5 text-purple-500" />
-            {label}
+      {!result && !isProcessing && (
+        <div className="space-y-1 overflow-y-auto flex-1 px-3 py-3">
+          <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">Writing</p>
+          <button onClick={handleContinueWriting} className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-foreground">
+            <ArrowRight className="h-3.5 w-3.5 text-purple-500" />
+            Continue writing
           </button>
-        ))}
-      </div>
+          <button onClick={handleSummarize} className="flex cursor-pointer w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-foreground">
+            <FileText className="h-3.5 w-3.5 text-purple-500" />
+            Summarize document
+          </button>
 
-      {/* Result area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {isProcessing && (
-          <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Processing...
-          </div>
-        )}
+          <p className="mb-2 mt-3 text-xs font-medium text-muted-foreground uppercase">Edit Selection</p>
+          {(
+            [
+              ["grammar", "Fix grammar & spelling"],
+              ["improve", "Improve clarity"],
+              ["shorten", "Make shorter"],
+              ["expand", "Expand with detail"],
+              ["professional", "Professional tone"],
+              ["casual", "Casual tone"],
+            ] as const
+          ).map(([action, label]) => (
+            <button key={action} onClick={() => handleImproveText(action)} className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors text-foreground">
+              <Wand2 className="h-3.5 w-3.5 text-purple-500" />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
-        {result && (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto px-4 py-3">
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
-                {activeAction === "complete" && "Continuation:"}
-                {activeAction === "summarize" && "Summary:"}
-                {activeAction && !["complete", "summarize"].includes(activeAction) && "Suggested edit:"}
-              </p>
-              <div className="rounded-md border bg-muted/30 p-3 text-sm whitespace-pre-wrap">{result}</div>
+      {/* Result & Processing area */}
+      {(result || isProcessing) && (
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {isProcessing && (
+            <div className="flex flex-1 flex-col items-center justify-center p-6 text-center animate-pulse">
+              <Loader2 className="h-6 w-6 animate-spin text-purple-500 mb-2" />
+              <p className="text-sm text-muted-foreground">Generating response...</p>
             </div>
+          )}
 
-            <div className="flex gap-2 border-t px-4 py-3">
-              <Button size="sm" onClick={insertResult} className="flex-1 cursor-pointer">
-                <Check className="mr-1.5 h-3.5 w-3.5" />
-                {activeAction === "summarize" ? "Insert" : activeAction === "complete" ? "Insert" : "Replace"}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setResult("");
-                  setActiveAction(null);
-                }}
-                className="cursor-pointer"
-              >
-                Discard
-              </Button>
+          {result && (
+            <div className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <span className="text-xs font-semibold text-purple-600 uppercase tracking-wider">
+                    {activeAction === "complete" && "Continuation"}
+                    {activeAction === "summarize" && "Summary"}
+                    {activeAction && !["complete", "summarize"].includes(activeAction) && "Suggested Edit"}
+                  </span>
+                </div>
+                <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground rounded-lg border bg-muted/20 p-3 shadow-inner">
+                  {result}
+                </div>
+              </div>
+
+              <div className="flex gap-2 border-t px-4 py-3 bg-muted/5">
+                <Button size="sm" onClick={insertResult} className="flex-1 cursor-pointer bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-sm">
+                  <Check className="mr-1.5 h-3.5 w-3.5" />
+                  {activeAction === "summarize" ? "Insert" : activeAction === "complete" ? "Insert" : "Replace"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setResult("");
+                    setActiveAction(null);
+                  }}
+                  className="cursor-pointer"
+                >
+                  Discard
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-
-        {!result && !isProcessing && (
-          <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-            <Sparkles className="h-8 w-8 text-muted-foreground/30" />
-            <p className="text-xs text-muted-foreground">Select text and choose an action, or use &quot;Continue writing&quot; to generate new content at your cursor.</p>
-          </div>
-        )}
+          )}
+        </div>
+      )}
       </div>
-    </div>
+    </>
   );
 }

@@ -102,7 +102,14 @@ export function VersionPanel({ documentId, userRole, isOpen, onClose, onRestore,
   if (!isOpen) return null;
 
   return (
-    <div className="flex h-full w-80 flex-col border-l bg-background">
+    <>
+      {/* Mobile backdrop */}
+      <div 
+        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-xs md:hidden"
+        onClick={onClose}
+      />
+
+      <div className="fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-xs flex-col border-l bg-background shadow-xl md:relative md:w-80 md:shadow-none animate-in slide-in-from-right duration-200">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
@@ -185,5 +192,6 @@ export function VersionPanel({ documentId, userRole, isOpen, onClose, onRestore,
         isLoading={isRestoring}
       />
     </div>
+    </>
   );
 }
