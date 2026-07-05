@@ -7,7 +7,6 @@ import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
-import { UndoManager } from "yjs";
 import { useSyncEngine } from "@/hooks/use-sync-engine";
 import { EditorToolbar } from "./editor-toolbar";
 import { ConnectionStatus } from "./connection-status";
@@ -32,19 +31,10 @@ export function EditorRoot({ documentId, initialTitle, userRole, userId, userNam
   const [isVersionPanelOpen, setIsVersionPanelOpen] = useState(false);
   const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
   const [ydoc] = useState(() => new Y.Doc());
-  const [undoManager, setUndoManager] = useState<UndoManager | null>(null);
   const isReadOnly = userRole === "viewer";
 
   // Offline Sync Engine — handles IndexedDB + WebSocket + reconnection
   const { syncState, pendingUpdates, forceReconnect } = useSyncEngine({ documentId, ydoc });
-
-  // Undo manager setup
-  useEffect(() => {
-    const yXmlFragment = ydoc.getXmlFragment("default");
-    const um = new UndoManager(yXmlFragment);
-    setUndoManager(um);
-    return () => um.destroy();
-  }, [ydoc]);
 
   // Configure TipTap editor with Yjs collaboration extension
   const editor = useEditor({
@@ -125,7 +115,7 @@ export function EditorRoot({ documentId, initialTitle, userRole, userId, userNam
       </header>
 
       {/* Toolbar */}
-      {!isReadOnly && editor && <EditorToolbar editor={editor} undoManager={undoManager} />}
+      {!isReadOnly && editor && <EditorToolbar editor={editor} />}
 
       {/* Main content area with optional version panel */}
       <div className="flex flex-1 overflow-hidden">
