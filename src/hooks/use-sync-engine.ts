@@ -54,12 +54,7 @@ export function useSyncEngine({ documentId, ydoc, enabled = true }: UseSyncEngin
     };
   }, [ydoc]);
 
-  // Derive state from online status + WS status
-  useEffect(() => {
-    if (!isOnline) {
-      setSyncState("offline");
-    }
-  }, [isOnline]);
+
 
   // Initialize providers
   useEffect(() => {
@@ -132,13 +127,19 @@ export function useSyncEngine({ documentId, ydoc, enabled = true }: UseSyncEngin
     };
   }, [documentId, ydoc, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // When coming back online, force reconnect if disconnected
+  // Connect/disconnect based on browser online status
   useEffect(() => {
-    if (isOnline && hocuspocusRef.current && syncState === "offline") {
+    const provider = hocuspocusRef.current;
+    if (!provider) return;
+
+    if (!isOnline) {
+      provider.disconnect();
+      setSyncState("offline");
+    } else {
       setSyncState("syncing");
-      hocuspocusRef.current.connect();
+      provider.connect();
     }
-  }, [isOnline, syncState]);
+  }, [isOnline]);
 
   // Manual reconnect
   const forceReconnect = useCallback(() => {
