@@ -32,10 +32,10 @@ function DocumentCard({ doc, onDelete }: { doc: Document; onDelete: (id: string)
               e.stopPropagation();
               setMenuOpen(!menuOpen);
             }}
-            className="flex h-7 w-7 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-secondary group-hover:opacity-100"
+            className="flex h-7 w-7 items-center justify-center rounded-md transition-opacity hover:bg-secondary"
             aria-label="Document options"
           >
-            <MoreHorizontal className="h-4 w-4" />
+            <MoreHorizontal className="h-4 w-4 cursor-pointer" />
           </button>
           {menuOpen && (
             <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-md border bg-popover p-1 shadow-md" onClick={(e) => e.stopPropagation()}>

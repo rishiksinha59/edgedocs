@@ -24,7 +24,7 @@ function ThemeToggle() {
 
   return (
     <div className="relative" ref={ref}>
-      <Button variant="ghost" size="icon" onClick={() => setOpen(!open)} aria-label="Toggle theme">
+      <Button className="cursor-pointer" variant="ghost" size="icon" onClick={() => setOpen(!open)} aria-label="Toggle theme">
         <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
         <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
       </Button>
@@ -35,7 +35,7 @@ function ThemeToggle() {
               setTheme("light");
               setOpen(false);
             }}
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+            className="flex w-full items-center cursor-pointer gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
           >
             <Sun className="h-4 w-4" /> Light
           </button>
@@ -44,7 +44,7 @@ function ThemeToggle() {
               setTheme("dark");
               setOpen(false);
             }}
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+            className="flex w-full items-center cursor-pointer gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
           >
             <Moon className="h-4 w-4" /> Dark
           </button>
@@ -53,7 +53,7 @@ function ThemeToggle() {
               setTheme("system");
               setOpen(false);
             }}
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+            className="flex w-full items-center cursor-pointer gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
           >
             <Monitor className="h-4 w-4" /> System
           </button>
@@ -89,7 +89,7 @@ function UserMenu() {
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={() => setOpen(!open)} className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground transition-opacity hover:opacity-80" aria-label="User menu">
+      <button onClick={() => setOpen(!open)} className="flex cursor-pointer h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground transition-opacity hover:opacity-80" aria-label="User menu">
         {initials}
       </button>
       {open && (
@@ -98,7 +98,7 @@ function UserMenu() {
             <p className="text-sm font-medium truncate">{session?.user?.name}</p>
             <p className="text-xs text-muted-foreground truncate">{session?.user?.email}</p>
           </div>
-          <button onClick={() => signOut({ callbackUrl: "/login" })} className="mt-1 flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-accent">
+          <button onClick={() => signOut({ callbackUrl: "/login" })} className="mt-1 flex w-full items-center cursor-pointer gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-accent">
             <LogOut className="h-4 w-4" /> Sign out
           </button>
         </div>
