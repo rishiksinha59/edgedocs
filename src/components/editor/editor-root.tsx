@@ -89,17 +89,17 @@ export function EditorRoot({ documentId, initialTitle, userRole, userId, userNam
   }, [title, saveTitle, initialTitle]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       {/* Offline Banner */}
       <OfflineBanner />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 flex h-14 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-sm">
         <Button variant="ghost" size="icon" onClick={() => router.push("/documents")} aria-label="Back to documents">
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
-        <input value={title} onChange={(e) => setTitle(e.target.value)} className="flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-muted-foreground" placeholder="Untitled" disabled={isReadOnly} aria-label="Document title" />
+        <input value={title} onChange={(e) => setTitle(e.target.value)} className="min-w-[60px] flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-muted-foreground truncate" placeholder="Untitled" disabled={isReadOnly} aria-label="Document title" />
 
         <ConnectionStatus syncState={syncState} pendingUpdates={pendingUpdates} onReconnect={forceReconnect} />
 
@@ -107,10 +107,10 @@ export function EditorRoot({ documentId, initialTitle, userRole, userId, userNam
           variant="outline"
           size="sm"
           onClick={() => setIsShareModalOpen(true)}
-          className="flex items-center gap-1.5 h-8 font-medium cursor-pointer"
+          className="flex items-center gap-1.5 h-8 px-2.5 sm:px-3 font-medium cursor-pointer"
         >
           <UserPlus className="h-3.5 w-3.5" />
-          <span>Share</span>
+          <span className="hidden sm:inline">Share</span>
         </Button>
 
         <Button className="cursor-pointer" variant="ghost" size="icon" onClick={() => setIsVersionPanelOpen((v) => !v)} aria-label="Version history" title="Version history">
@@ -131,9 +131,12 @@ export function EditorRoot({ documentId, initialTitle, userRole, userId, userNam
 
       {/* Main content area with optional version panel */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Editor */}
-        <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto">
-          <EditorContent editor={editor} />
+        {/* Scrollable workspace container (takes full width) */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Document content (centered with max width) */}
+          <div className="mx-auto w-full max-w-3xl px-4 py-8">
+            <EditorContent editor={editor} />
+          </div>
         </div>
 
         {/* Version History Panel */}

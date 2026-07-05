@@ -17,31 +17,31 @@ export function ConnectionStatus({ syncState, pendingUpdates = 0, onReconnect }:
         {syncState === "connected" && (
           <>
             <Wifi className="h-3 w-3" />
-            <span>Saved</span>
+            <span className="hidden sm:inline">Saved</span>
           </>
         )}
         {syncState === "offline" && (
           <>
             <WifiOff className="h-3 w-3" />
-            <span>Offline{pendingUpdates > 0 ? ` (${pendingUpdates} pending)` : ""}</span>
+            <span className="hidden sm:inline">Offline{pendingUpdates > 0 ? ` (${pendingUpdates} pending)` : ""}</span>
           </>
         )}
         {syncState === "syncing" && (
           <>
             <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Syncing</span>
+            <span className="hidden sm:inline">Syncing</span>
           </>
         )}
         {syncState === "disconnected" && (
           <>
             <CloudOff className="h-3 w-3" />
-            <span>Disconnected</span>
+            <span className="hidden sm:inline">Disconnected</span>
           </>
         )}
         {syncState === "error" && (
           <>
             <CloudOff className="h-3 w-3" />
-            <span>Error</span>
+            <span className="hidden sm:inline">Error</span>
           </>
         )}
       </div>

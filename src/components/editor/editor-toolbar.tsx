@@ -15,14 +15,14 @@ interface ToolbarButtonProps {
 
 function ToolbarButton({ onClick, isActive, disabled, children, title }: ToolbarButtonProps) {
   return (
-    <button onClick={onClick} disabled={disabled} title={title} className={cn("flex h-8 w-8 items-center justify-center rounded-md transition-colors cursor-pointer", "hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed", isActive && "bg-secondary text-foreground")}>
+    <button onClick={onClick} disabled={disabled} title={title} className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors cursor-pointer", "hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed", isActive && "bg-secondary text-foreground")}>
       {children}
     </button>
   );
 }
 
 function ToolbarDivider() {
-  return <div className="mx-1 h-6 w-px bg-border" />;
+  return <div className="mx-1 h-6 w-px shrink-0 bg-border" />;
 }
 
 interface EditorToolbarProps {
@@ -46,7 +46,7 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
   }, [editor]);
 
   return (
-    <div className="sticky top-14 z-40 flex items-center gap-0.5 overflow-x-auto border-b bg-background/80 px-4 py-1.5 backdrop-blur-sm">
+    <div className="sticky top-14 z-30 flex flex-nowrap items-center gap-0.5 overflow-x-auto border-b bg-background/80 px-4 py-1.5 backdrop-blur-sm">
       <ToolbarButton onClick={() => editor.chain().focus().undo().run()} disabled={!canUndo} title="Undo (⌘Z)">
         <Undo2 className="h-4 w-4" />
       </ToolbarButton>
