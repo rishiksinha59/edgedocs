@@ -149,6 +149,32 @@ export function ShareModal({ documentId, userRole, isOpen, onClose }: ShareModal
     }
   };
 
+  const handleUpdateRole = async (userId: string, newRole: "editor" | "viewer") => {
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await fetch(`/api/documents/${documentId}/collaborators/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error?.message || "Failed to update collaborator role");
+      }
+
+      setCollaborators((prev) =>
+        prev.map((c) => (c.id === userId ? { ...c, role: newRole } : c))
+      );
+      setSuccess(`Successfully updated collaborator role.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update collaborator role");
+    }
+  };
+
   function getInitials(name: string | null, email: string) {
     const text = name || email;
     return text
@@ -273,18 +299,29 @@ export function ShareModal({ documentId, userRole, isOpen, onClose }: ShareModal
                     </div>
                   </div>
 
-                  {/* Actions (Role Badge / Delete button) */}
+                  {/* Actions (Role Badge / Dropdown / Delete button) */}
                   <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
-                        c.role === "owner" && "bg-primary/10 text-primary",
-                        c.role === "editor" && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-                        c.role === "viewer" && "bg-gray-500/10 text-gray-500"
-                      )}
-                    >
-                      {c.role}
-                    </span>
+                    {isOwner && c.role !== "owner" ? (
+                      <select
+                        value={c.role}
+                        onChange={(e) => handleUpdateRole(c.id, e.target.value as "editor" | "viewer")}
+                        className="h-7 rounded-md border border-input bg-background px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-medium"
+                      >
+                        <option value="editor">Editor</option>
+                        <option value="viewer">Viewer</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={cn(
+                          "rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-wide",
+                          c.role === "owner" && "bg-primary/10 text-primary",
+                          c.role === "editor" && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                          c.role === "viewer" && "bg-gray-500/10 text-gray-500"
+                        )}
+                      >
+                        {c.role}
+                      </span>
+                    )}
 
                     {/* Revoke button (only visible to owner, and only for non-owner collaborators) */}
                     {isOwner && c.role !== "owner" && (
