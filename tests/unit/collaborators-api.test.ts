@@ -27,7 +27,7 @@ describe("PATCH /api/documents/[id]/collaborators/[uid]", () => {
   });
 
   it("returns 401 if user is not authenticated", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    vi.mocked(auth as any).mockResolvedValue(null);
 
     const res = await PATCH(new Request("http://localhost:3000", { method: "PATCH" }), {
       params: Promise.resolve({ id: "doc-123", uid: "user-456" }),
@@ -39,7 +39,7 @@ describe("PATCH /api/documents/[id]/collaborators/[uid]", () => {
   });
 
   it("returns 403 if authenticated user is not the document owner", async () => {
-    vi.mocked(auth).mockResolvedValue({
+    vi.mocked(auth as any).mockResolvedValue({
       user: { id: "user-789", name: "Editor User" },
       expires: "expiry",
     });
@@ -60,7 +60,7 @@ describe("PATCH /api/documents/[id]/collaborators/[uid]", () => {
   });
 
   it("returns 400 if trying to change the owner's role", async () => {
-    vi.mocked(auth).mockResolvedValue({
+    vi.mocked(auth as any).mockResolvedValue({
       user: { id: "owner-id", name: "Owner User" },
       expires: "expiry",
     });
@@ -90,7 +90,7 @@ describe("PATCH /api/documents/[id]/collaborators/[uid]", () => {
   });
 
   it("returns 400 if the new role is invalid", async () => {
-    vi.mocked(auth).mockResolvedValue({
+    vi.mocked(auth as any).mockResolvedValue({
       user: { id: "owner-id", name: "Owner User" },
       expires: "expiry",
     });
@@ -118,7 +118,7 @@ describe("PATCH /api/documents/[id]/collaborators/[uid]", () => {
   });
 
   it("updates and returns the collaborator on success", async () => {
-    vi.mocked(auth).mockResolvedValue({
+    vi.mocked(auth as any).mockResolvedValue({
       user: { id: "owner-id", name: "Owner User" },
       expires: "expiry",
     });
