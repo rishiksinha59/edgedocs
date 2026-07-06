@@ -214,7 +214,13 @@ The Hocuspocus WebSocket server runs in a Docker container on Railway with the s
 
 ## Testing & Quality Assurance
 
-EdgeDocs utilizes **Vitest** for unit and integration testing. The test suite contains **107 passing tests** verifying the core local-first capabilities, schema safety, API contracts, and conflict resolution engine.
+EdgeDocs utilizes **Vitest** for unit, integration, and E2E testing. The test suite contains **113 passing tests** verifying the core local-first capabilities, E2E API user flows, schema safety, RBAC permissions, and the conflict resolution engine.
+
+### Test Directory Reorganization
+The test suite is structured into three explicit domains to verify correctness at different boundaries:
+1. **`tests/unit/`** — Verifies pure utility logic, configurations, schemas, and validation structures.
+2. **`tests/integration/`** — Evaluates interactions between subsystems (e.g. concurrent editing CRDT merges, rate limiting client tracking, dynamic API handler/database layer communication).
+3. **`tests/e2e/`** — Exercises full user flows (e.g. registration → document creation → collaborator invitation → WebSocket sync token generation).
 
 ### Running Tests Locally
 
