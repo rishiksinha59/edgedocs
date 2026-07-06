@@ -1,5 +1,7 @@
 # EdgeDocs
 
+[![CI](https://github.com/rishiksinha59/edgedocs/actions/workflows/ci.yml/badge.svg)](https://github.com/rishiksinha59/edgedocs/actions/workflows/ci.yml)
+
 A local-first, collaborative document editor with offline synchronization, deterministic conflict resolution, and granular version control. Built with Next.js 16, Yjs CRDTs, and PostgreSQL.
 
 **Live Demo:** [edgedocs.vercel.app](https://edgedocs.vercel.app)
@@ -207,6 +209,54 @@ The Next.js frontend auto-deploys to Vercel on every push to `main`.
 
 ### Collaboration Server (Railway)
 The Hocuspocus WebSocket server runs in a Docker container on Railway with the same `DATABASE_URL` and `COLLABORATION_JWT_SECRET` environment variables.
+
+---
+
+## Testing & Quality Assurance
+
+EdgeDocs utilizes **Vitest** for unit and integration testing. The test suite contains **107 passing tests** verifying the core local-first capabilities, schema safety, API contracts, and conflict resolution engine.
+
+### Running Tests Locally
+
+Run the full test suite locally:
+```bash
+npm run test
+```
+
+Generate the unit test coverage report:
+```bash
+npm run test:coverage
+```
+
+### Coverage Report
+
+The core business logic under `src/lib/` currently holds **100% Statement, Branch, Function, and Line Coverage**:
+
+```text
+ % Coverage report from v8
+-----------------|---------|----------|---------|---------|-------------------
+File             | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-----------------|---------|----------|---------|---------|-------------------
+All files        |     100 |      100 |     100 |     100 |                   
+ lib             |     100 |      100 |     100 |     100 |                   
+  config.ts      |     100 |      100 |     100 |     100 |                   
+  errors.ts      |     100 |      100 |     100 |     100 |                   
+  format.ts      |     100 |      100 |     100 |     100 |                   
+  rate-limit.ts  |     100 |      100 |     100 |     100 |                   
+  utils.ts       |     100 |      100 |     100 |     100 |                   
+ lib/validations |     100 |      100 |     100 |     100 |                   
+  auth.ts        |     100 |      100 |     100 |     100 |                   
+  document.ts    |     100 |      100 |     100 |     100 |                   
+-----------------|---------|----------|---------|---------|-------------------
+```
+
+### Automated CI/CD Testing
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every commit. It validates the following steps automatically:
+1. Installs clean dependencies.
+2. Performs strict TypeScript compilation check (`tsc --noEmit`).
+3. Runs the test suite with coverage (`npm run test:coverage`).
+4. Uploads coverage HTML report logs as artifacts.
+5. Builds the production Next.js application bundles.
 
 ---
 
